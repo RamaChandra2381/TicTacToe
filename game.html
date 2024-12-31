@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background: url('2background.png') no-repeat center center fixed; /* Add background image */
+            background-size: cover; /* Ensure background image covers the entire screen */
+            color: #4ffaff;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        .header {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: white; /* White color for round text */
+        }
+        .game-area {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        .player-score {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 18px;
+            color: white;
+            background: #ffffff33; /* Semi-transparent white background */
+            padding: 20px;
+            border-radius: 10px;
+            width: 120px;
+        }
+        .player-score h3 {
+            margin: 0 0 10px 0;
+            color: #FFD700; /* Gold color for player name */
+        }
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            background-color: #ffffff33;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #ffffff;
+            border: 2px solid #000;
+            font-size: 36px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .cell.taken {
+            pointer-events: none;
+        }
+        .cell.x {
+            color: blue; /* Blue color for X */
+        }
+        .cell.o {
+            color: red; /* Red color for O */
+        }
+        .winner {
+            margin-top: 20px;
+            font-size: 24px;
+            color: #FFD700; /* Gold color for winner message */
+        }
+        .restart, .rematch {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: rgb(255, 255, 255);
+            border: none;
+            border-radius: 5px;
+        }
+        .restart:hover, .rematch:hover {
+            background-color: #0056b3;
+        }
+        .instruction {
+            margin-top: 15px;
+            font-size: 18px;
+            color: #FFD700; /* Gold color for instructions */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header" id="round">ROUND: 1</div>
+        <div class="game-area">
+            <div class="player-score" id="player1-score">
+                <h3>Player 1 (X)</h3>
+                <p id="player1-wins">Wins: 0</p>
+            </div>
+            <div class="board" id="board"></div>
+            <div class="player-score" id="player2-score">
+                <h3>Player 2 (O)</h3>
+                <p id="player2-wins">Wins: 0</p>
+            </div>
+        </div>
+        <div class="winner" id="winner"></div>
+        <button class="restart" id="restart">Restart</button>
+        <button class="rematch" id="rematch">Rematch</button>
+        <div class="instruction"></div>
+    </div>
+
+    <script>
+        const board = document.getElementById('board');
+        const winnerDisplay = document.getElementById('winner');
+        const restartButton = document.getElementById('restart');
+        const rematchButton = document.getElementById('rematch');
+        const roundDisplay = document.getElementById('round');
+        const player1WinsDisplay = document.getElementById('player1-wins');
+        const player2WinsDisplay = document.getElementById('player2-wins');
+
+        let currentPlayer = 'X';
+        let gameActive = true;
+        let gameState = ["", "", "", "", "", "", "", "", ""];
+        let scores = { X: 0, O: 0 };
+        let roundNumber = 1;
+
+        const winningConditions = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        function updateScores(winner) {
+            if (winner !== 'Tie') {
+                scores[winner] += 1;
+                if (winner === 'X') {
+                    player1WinsDisplay.textContent = `Wins: ${scores.X}`;
+                } else {
+                    player2WinsDisplay.textContent = `Wins: ${scores.O}`;
+                }
+            }
+        }
+
+        function checkWinner() {
+            for (const condition of winningConditions) {
+                const [a, b, c] = condition;
+                if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
+                    gameActive = false;
+                    document.querySelectorAll('.cell').forEach((cell, index) => {
+                        if (condition.includes(index)) {
+                            cell.style.backgroundColor = 'lightgreen'; // Highlight cells
+                        }
+                    });
+                    return gameState[a];
+                }
+            }
+            return gameState.includes("") ? null : 'Tie';
+        }
+
+        function handleCellClick(event) {
+            const cell = event.target;
+            const cellIndex = cell.getAttribute('data-index');
+
+            if (!gameActive || gameState[cellIndex]) return;
+
+            gameState[cellIndex] = currentPlayer;
+            cell.textContent = currentPlayer;
+            cell.classList.add('taken');
+            cell.classList.add(currentPlayer.toLowerCase()); // Add class for color
+
+            const result = checkWinner();
+            if (result) {
+                winnerDisplay.textContent = result === 'Tie' ? "It's a Tie!" : `${result} Wins!`;
+                updateScores(result);
+                gameActive = false;
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            }
+        }
+
+        function restartGame() {
+            gameActive = true;
+            gameState = ["", "", "", "", "", "", "", "", ""];
+            currentPlayer = 'X';
+            winnerDisplay.textContent = "";
+            roundNumber = 1;
+            roundDisplay.textContent = `ROUND: ${roundNumber}`;
+            scores = { X: 0, O: 0 };
+            player1WinsDisplay.textContent = `Wins: ${scores.X}`;
+            player2WinsDisplay.textContent = `Wins: ${scores.O}`;
+
+            while (board.firstChild) {
+                board.removeChild(board.firstChild);
+            }
+
+            createBoard();
+        }
+
+        function rematchGame() {
+            gameActive = true;
+            gameState = ["", "", "", "", "", "", "", "", ""];
+            winnerDisplay.textContent = "";
+            roundNumber += 1;
+            roundDisplay.textContent = `ROUND: ${roundNumber}`;
+
+            while (board.firstChild) {
+                board.removeChild(board.firstChild);
+            }
+
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            createBoard();
+        }
+
+        function createBoard() {
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.setAttribute('data-index', i);
+                cell.addEventListener('click', handleCellClick);
+                board.appendChild(cell);
+            }
+        }
+
+        createBoard();
+        restartButton.addEventListener('click', restartGame);
+        rematchButton.addEventListener('click', rematchGame);
+    </script>
+</body>
+</html>
